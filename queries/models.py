@@ -29,5 +29,3 @@ class QueryLog(models.Model):
         verbose_name = 'Query Log'
         verbose_name_plural = 'Query Logs'
 
-    def __str__(self):
-        return f"Query by {self.user.username} at {self.created_at:%Y-%m-%d %H:%M}"

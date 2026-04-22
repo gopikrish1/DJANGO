@@ -25,5 +25,3 @@ class Document(models.Model):
         verbose_name = 'Document'
         verbose_name_plural = 'Documents'
 
-    def __str__(self):
-        return f"{self.title} (by {self.user.username})"

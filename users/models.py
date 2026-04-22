@@ -24,5 +24,3 @@ class UserSession(models.Model):
         verbose_name = 'User Session'
         verbose_name_plural = 'User Sessions'
 
-    def __str__(self):
-        return f"Session for {self.user.username} at {self.created_at:%Y-%m-%d %H:%M}"

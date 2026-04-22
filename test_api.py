@@ -15,7 +15,7 @@ print("Starting Comprehensive API Tests...\n" + "="*40)
 print("TEST 1: Authentication")
 login_resp = requests.post(f"{BASE_URL}/api/auth/login/", json={
     "username": "admin",
-    "password": "admin123"
+    "password": "1213"
 })
 assert login_resp.status_code == 200, f"Login failed: {login_resp.text}"
 data = login_resp.json()

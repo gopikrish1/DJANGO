@@ -12,4 +12,4 @@ class QueryLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = QueryLog
         fields = ['id', 'query_text', 'response', 'created_at', 'user']
-        read_only_fields = ['id', 'created_at', 'user']
+        read_only_fields = ['id', 'response', 'created_at', 'user']
