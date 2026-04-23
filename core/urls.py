@@ -2,11 +2,14 @@
 core URL Configuration
 
 Routes:
-    /api/documents/       → Document CRUD
-    /api/query/           → Submit a query
-    /api/queries/         → List query history
-    /api/auth/login/      → JWT login
-    /admin/               → Django admin panel
+    /api/documents/            → Document List & Upload
+    /api/documents/{id}/       → Document Detail
+    /api/documents/ingest-doc/ → Ingest document into FAISS
+    /api/ask-ai/               → LLM Q&A
+    /api/rag-query/            → RAG-based document query
+    /api/query-history/        → Paginated query history
+    /api/auth/login/           → JWT login
+    /admin/                    → Django admin panel
 """
 
 from django.contrib import admin
@@ -23,7 +26,7 @@ urlpatterns = [
     # Documents API
     path('api/documents/', include('documents.urls')),
 
-    # Queries API (both /api/query/ and /api/queries/ are defined in queries.urls)
+    # AI & Queries API (ask-ai, rag-query, query-history)
     path('api/', include('queries.urls')),
 
     # Authentication API

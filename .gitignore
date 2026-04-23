@@ -21,3 +21,6 @@ dummy_upload.txt
 # Editors
 .vscode/
 .idea/
+
+# Vector Store
+faiss_index/

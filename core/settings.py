@@ -151,6 +151,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True  # For development only
 CORS_ALLOW_CREDENTIALS = True
 
+# ============================================================
+# AI / RAG Configuration
+# ============================================================
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
+OPENAI_CHAT_MODEL = 'gpt-3.5-turbo'
+OPENAI_EMBEDDING_MODEL = 'text-embedding-3-small'
+FAISS_INDEX_DIR = str(BASE_DIR / 'faiss_index')
+
+
 REST_FRAMEWORK = {
     # Use JWT as the default authentication mechanism, but allow Session auth for the browsable API
     'DEFAULT_AUTHENTICATION_CLASSES': (

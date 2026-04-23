@@ -1,64 +1,120 @@
 import logging
-import os
 
-from django.conf import settings
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from openai import OpenAI
+from rest_framework.views import APIView
 
 from .models import QueryLog
-from .serializers import QueryLogSerializer
+from .serializers import AskAISerializer, RAGQuerySerializer, QueryLogSerializer
+from .ai_service import ask_ai, rag_query
 
 logger = logging.getLogger(__name__)
 
-# Initialize the OpenAI client. It automatically picks up OPENAI_API_KEY from environment variables.
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY', ''))
 
-
-class QueryCreateView(generics.CreateAPIView):
+class AskAIView(generics.GenericAPIView):
     """
-    POST /api/query/  → Accept a query, store it in QueryLog, and return the saved entry.
+    POST /api/ask-ai/
+    Direct LLM Q&A with prompt templates.
+    Logs the interaction to QueryLog with from_rag=False.
     """
-    serializer_class = QueryLogSerializer
     permission_classes = [IsAuthenticated]
+    serializer_class = AskAISerializer
 
-    def perform_create(self, serializer):
-        """Associate the query with the current authenticated user and get OpenAI response."""
-        query_text = serializer.validated_data.get('query_text', '')
-        
-        response_text = None
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        question = serializer.validated_data['question']
+
         try:
-            # Call the OpenAI API
-            completion = client.chat.completions.create(
-                model="gpt-3.5-turbo", # or "gpt-4o", depending on what your key supports
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": query_text}
-                ]
+            answer = ask_ai(question)
+        except Exception as exc:
+            logger.error("AskAI failed: %s", exc)
+            return Response(
+                {"error": "Failed to generate AI response. Please try again."},
+                status=status.HTTP_502_BAD_GATEWAY,
             )
-            response_text = completion.choices[0].message.content
-        except Exception as e:
-            logger.error("OpenAI API Error: %s", e)
-            response_text = "Sorry, there was an error generating a response."
 
-        # Save both the user and the generated response
-        serializer.save(user=self.request.user, response=response_text)
-        
-        logger.info(
-            "User '%s' submitted query: %s",
-            self.request.user.username,
-            serializer.instance.query_text[:80],
+        # Log the query
+        QueryLog.objects.create(
+            query_text=question,
+            response=answer,
+            from_rag=False,
+            user=request.user,
         )
 
+        logger.info(
+            "User '%s' asked AI: %s", request.user.username, question[:80]
+        )
 
-class QueryListView(generics.ListAPIView):
+        return Response({
+            "question": question,
+            "answer": answer,
+        }, status=status.HTTP_200_OK)
+
+
+class RAGQueryView(generics.GenericAPIView):
     """
-    GET /api/queries/  → List the authenticated user's query history (paginated).
+    POST /api/rag-query/
+    RAG-based document query.
+    Retrieves relevant chunks from FAISS, augments the prompt, and calls the LLM.
+    Logs the interaction to QueryLog with from_rag=True.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = RAGQuerySerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        question = serializer.validated_data['question']
+
+        try:
+            result = rag_query(question)
+        except Exception as exc:
+            logger.error("RAG query failed: %s", exc)
+            return Response(
+                {"error": "Failed to process RAG query. Please try again."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        # Log the query
+        QueryLog.objects.create(
+            query_text=question,
+            response=result["answer"],
+            from_rag=True,
+            user=request.user,
+        )
+
+        logger.info(
+            "User '%s' RAG query: %s", request.user.username, question[:80]
+        )
+
+        return Response({
+            "question": question,
+            "answer": result["answer"],
+            "sources": result["sources"],
+        }, status=status.HTTP_200_OK)
+
+
+class QueryHistoryView(generics.ListAPIView):
+    """
+    GET /api/query-history/
+    Paginated query history for the authenticated user.
+    Supports filtering by from_rag query param: ?from_rag=true or ?from_rag=false
     """
     serializer_class = QueryLogSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return only queries belonging to the current user."""
-        return QueryLog.objects.filter(user=self.request.user)
+        """Return queries belonging to the current user, with optional filtering."""
+        qs = QueryLog.objects.filter(user=self.request.user)
+
+        # Optional filter by from_rag
+        from_rag_param = self.request.query_params.get('from_rag')
+        if from_rag_param is not None:
+            from_rag_value = from_rag_param.lower() in ('true', '1', 'yes')
+            qs = qs.filter(from_rag=from_rag_value)
+
+        return qs

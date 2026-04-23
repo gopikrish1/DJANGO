@@ -13,3 +13,10 @@ class DocumentSerializer(serializers.ModelSerializer):
         model = Document
         fields = ['id', 'title', 'file', 'uploaded_at', 'user']
         read_only_fields = ['id', 'uploaded_at', 'user']
+
+
+class IngestDocSerializer(serializers.Serializer):
+    """Input serializer for POST /api/ingest-doc/"""
+    document_id = serializers.IntegerField(
+        help_text="ID of the document to ingest into the vector store"
+    )
