@@ -10,7 +10,7 @@ import logging
 
 from django.conf import settings
 from openai import OpenAI
-from langchain_openai import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -34,11 +34,8 @@ def get_openai_client():
 # Embeddings & FAISS helpers
 # ---------------------------------------------------------------------------
 def _get_embeddings():
-    """Return an OpenAI embeddings instance."""
-    return OpenAIEmbeddings(
-        model=settings.OPENAI_EMBEDDING_MODEL,
-        openai_api_key=settings.OPENAI_API_KEY,
-    )
+    """Return a local HuggingFace embeddings instance (sentence-transformers)."""
+    return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 
 def _get_faiss_store():
