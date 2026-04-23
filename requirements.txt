@@ -1,17 +1,4 @@
-﻿langchain>=0.3.0
-langchain-openai>=0.3.0
-faiss-cpu>=1.8.0
-pypdf2>=3.0.0
-Django==6.0.4
-django-cors-headers==4.9.0
-djangorestframework==3.17.1
-djangorestframework-simplejwt==5.5.1
-openai==2.32.0
-
-
-
-
-aiohappyeyeballs==2.6.1
+﻿aiohappyeyeballs==2.6.1
 aiohttp==3.13.5
 aiosignal==1.4.0
 annotated-types==0.7.0
@@ -83,4 +70,3 @@ uuid_utils==0.14.1
 xxhash==3.6.0
 yarl==1.23.0
 zstandard==0.25.0
-

@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 from datetime import timedelta
+import mimetypes
+
+# Fix for Windows not loading CSS properly in Django dev server
+mimetypes.add_type("text/css", ".css", True)
 
 from dotenv import load_dotenv
 
